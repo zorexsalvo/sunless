@@ -53,6 +53,18 @@ Test the UI without calling an API:
 PET_MOCK=1 ./run.sh
 ```
 
+## Packaging
+
+Build a signed `.app` bundle:
+
+```sh
+./package.sh
+```
+
+This creates `build/Sunless.app`. You can drag it to `/Applications` or open it from Finder. It reads the same `~/.sunlessrc` config file and bundles `sunless.png`/`sunny.png` if present.
+
+For distribution to other Macs you'll need an Apple Developer ID and notarization (`xcrun notarytool`). For personal use, ad-hoc signing (`codesign -s -`) is enough.
+
 ## License
 
 MIT

@@ -1,5 +1,6 @@
-# Build artifact
+# Build artifacts
 Pet
+build/
 
 # User-provided avatar images
 *.png
