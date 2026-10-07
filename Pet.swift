@@ -202,9 +202,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+func loadSunlessRC() {
+    let path = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".sunlessrc")
+        .path
+    guard FileManager.default.fileExists(atPath: path),
+          let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
+        return
+    }
+    for line in contents.split(separator: "\n") {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !trimmed.hasPrefix("#") else { continue }
+        let parts = trimmed.split(separator: "=", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { continue }
+        let key = parts[0].trimmingCharacters(in: .whitespaces)
+        var value = parts[1].trimmingCharacters(in: .whitespaces)
+        if value.hasPrefix("\"") && value.hasSuffix("\"") {
+            value = String(value.dropFirst().dropLast())
+        }
+        setenv(key, value, 1)
+    }
+}
+
 @main
 struct PetApp {
     static func main() {
+        loadSunlessRC()
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         let delegate = AppDelegate()

@@ -84,8 +84,13 @@ class AssistantState: ObservableObject {
 }
 
 func loadPetImage() -> NSImage? {
-    for name in ["sunless.png", "sunny.png"] {
-        let path = FileManager.default.currentDirectoryPath + "/\(name)"
+    let names = ["sunless", "sunny"]
+    for name in names {
+        if let url = Bundle.main.url(forResource: name, withExtension: "png"),
+           let image = NSImage(contentsOf: url) {
+            return image
+        }
+        let path = FileManager.default.currentDirectoryPath + "/\(name).png"
         if FileManager.default.fileExists(atPath: path),
            let image = NSImage(contentsOfFile: path) {
             return image
