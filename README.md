@@ -2,7 +2,7 @@
 
 A tiny desktop AI companion for macOS. It sits on your desktop as a floating avatar, shows responses in a bubble, and opens a compact composer when you want to chat.
 
-![screenshot-placeholder](docs/screenshot.png)
+![sunny](docs/screenshot.png)
 
 ## Requirements
 
