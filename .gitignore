@@ -1,0 +1,18 @@
+# Build artifact
+Pet
+
+# User-provided avatar images
+*.png
+
+# macOS
+.DS_Store
+
+# Swift
+*.swiftmodule
+*.swiftdoc
+*.dSYM
+
+# Python (legacy)
+venv/
+__pycache__/
+*.session
