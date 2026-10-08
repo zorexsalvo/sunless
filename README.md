@@ -19,6 +19,12 @@ A tiny desktop AI companion for macOS. It sits on your desktop as a floating ava
    ```sh
    HERMES_API_URL=http://argon:8642/v1/chat/conversations
    HERMES_API_KEY=your_api_key_here
+
+   # Optional: override the default session ID (defaults to a persistent UUID per Mac)
+   HERMES_SESSION_ID=your_session_id
+
+   # Optional: override the default context window (default: 50 most recent messages)
+   HERMES_MAX_CONTEXT_MESSAGES=50
    ```
 
 4. Run:

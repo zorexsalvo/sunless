@@ -39,13 +39,21 @@ actor HermesClient {
         if let key = ProcessInfo.processInfo.environment["HERMES_API_KEY"], !key.isEmpty {
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         }
+        let sessionID = ProcessInfo.processInfo.environment["HERMES_SESSION_ID"]
+            .flatMap { $0.isEmpty ? nil : $0 } ?? defaultSessionID()
+        request.setValue(sessionID, forHTTPHeaderField: "X-Hermes-Session-Id")
 
         let body: [String: Any] = [
             "model": "hermes-agent",
-            "messages": messages,
+            "messages": trimmedMessages(messages),
             "stream": true,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        if ProcessInfo.processInfo.environment["SUNLESS_DEBUG"] == "1" {
+            let pretty = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? ""
+            print("[sunless request] \(pretty)")
+        }
 
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
         guard let http = response as? HTTPURLResponse else {
@@ -74,5 +82,23 @@ actor HermesClient {
 
             onDelta(content)
         }
+    }
+
+    private func trimmedMessages(_ messages: [[String: String]]) -> [[String: String]] {
+        let limitString = ProcessInfo.processInfo.environment["HERMES_MAX_CONTEXT_MESSAGES"] ?? "50"
+        guard let limit = Int(limitString), limit > 0, messages.count > limit else {
+            return messages
+        }
+        return Array(messages.suffix(limit))
+    }
+
+    private func defaultSessionID() -> String {
+        let key = "sunless_session_id"
+        if let id = UserDefaults.standard.string(forKey: key), !id.isEmpty {
+            return id
+        }
+        let id = UUID().uuidString
+        UserDefaults.standard.set(id, forKey: key)
+        return id
     }
 }
