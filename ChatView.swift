@@ -11,6 +11,7 @@ class AssistantState: ObservableObject {
     @Published var isResponding = false
     @Published var focusComposer = false
     @Published var petState: PetState = .idle
+    @Published var dismissedMessageIDs: Set<UUID> = []
 
     enum PetState: Equatable {
         case idle, hover, thinking, responding, success, error
@@ -71,6 +72,10 @@ class AssistantState: ObservableObject {
         }
     }
 
+    func dismissMessage(id: UUID) {
+        dismissedMessageIDs.insert(id)
+    }
+
     func startMock() {
         Task {
             var count = 0
@@ -102,6 +107,7 @@ func loadPetImage() -> NSImage? {
 struct ResponseBubble: View {
     let text: String
     let isError: Bool
+    var onClose: (() -> Void)? = nil
 
     private var content: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -114,18 +120,31 @@ struct ResponseBubble: View {
     }
 
     var body: some View {
-        if isError {
-            content
-                .background(Color.red.opacity(0.12))
-                .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.red.opacity(0.3), lineWidth: 1))
-                .cornerRadius(18)
-                .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
-        } else {
-            content
-                .background(.ultraThinMaterial)
-                .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.gray.opacity(0.18), lineWidth: 1))
-                .cornerRadius(18)
-                .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
+        ZStack(alignment: .topTrailing) {
+            if isError {
+                content
+                    .background(Color.red.opacity(0.12))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.red.opacity(0.3), lineWidth: 1))
+                    .cornerRadius(18)
+                    .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
+            } else {
+                content
+                    .background(.ultraThinMaterial)
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.gray.opacity(0.18), lineWidth: 1))
+                    .cornerRadius(18)
+                    .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
+            }
+
+            if let onClose = onClose {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .padding([.top, .trailing], 8)
+            }
         }
     }
 }
@@ -389,15 +408,21 @@ struct AssistantRoot: View {
     var onMoveEnd: () -> Void
 
     private var latestResponse: ChatMessage? {
-        state.messages.last { $0.role == .assistant && !$0.content.isEmpty }
+        state.messages.last {
+            $0.role == .assistant && !$0.content.isEmpty && !state.dismissedMessageIDs.contains($0.id)
+        }
     }
 
     var body: some View {
         ZStack {
             if let response = latestResponse {
-                ResponseBubble(text: response.content, isError: state.petState == .error)
-                    .offset(y: -125)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                ResponseBubble(
+                    text: response.content,
+                    isError: state.petState == .error,
+                    onClose: { state.dismissMessage(id: response.id) }
+                )
+                .offset(y: -125)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
 
             PetWidget(onMove: onMove, onMoveEnd: onMoveEnd)
